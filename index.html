@@ -2,417 +2,158 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workplace Strengths Quiz</title>
+<title>ET/IDA Strengths Quiz</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body { font-family: Arial, sans-serif; background: #f4f6f8; color: #333; margin: 0; padding: 0; }
-.container { max-width: 900px; margin: 40px auto; background: #fff; padding: 40px; border-radius: 15px; box-shadow: 0 6px 25px rgba(0,0,0,0.1);}
-h1, h2 { text-align: center; }
-.question { font-size: 1.25em; margin-bottom: 20px; }
-.options { list-style: none; padding: 0; }
-.options li { margin-bottom: 12px; }
-.options button { width: 100%; padding: 14px; font-size: 1em; border-radius: 10px; border: 1px solid #ccc; background: #e2e8f0; cursor: pointer; transition: 0.2s;}
-.options button:hover { background: #cbd5e1; }
-#nextBtn { margin-top: 25px; padding: 14px 25px; font-size: 1.1em; border-radius: 10px; border: none; background: #4f46e5; color: white; cursor: pointer; }
-#progress { height: 20px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 25px; }
-#progress-bar { height: 100%; width: 0; background: #4f46e5; transition: 0.3s; }
-.results { display: none; }
-.bar-container { background: #e2e8f0; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
-.bar { height: 24px; border-radius: 10px; width: 0%; text-align: right; padding-right: 8px; color: white; font-weight: bold; line-height: 24px; transition: width 0.5s; }
-#finalProfile { background: #f0f4ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; font-size: 1.1em; line-height: 1.5; }
-#downloadBtn { margin-top: 20px; padding: 14px 25px; font-size: 1.1em; border-radius: 10px; border: none; background: #10b981; color: white; cursor: pointer; }
+body {font-family: "Segoe UI", Arial, sans-serif; margin: 2rem auto; max-width: 900px; background: #f9fafb; color: #111827;}
+h1 {color: #0f172a; text-align: center;}
+.hidden { display: none; }
+button {background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; margin-top: 1rem;}
+button:hover { background: #1d4ed8; }
+.question { background: #fff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
+label { display: block; margin: 0.3rem 0; }
+.report-section {border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; color: #fff;}
+.theme {background: #2563eb;}
+.style {background: #16a34a;}
+.strength {background: #d97706;}
+.archetype {background: #6b21a8;}
+.value-add {background: #1e293b; color: #fef3c7;}
+.progress-bar {background: rgba(255,255,255,0.3); border-radius: 6px; overflow: hidden; margin-top: 0.5rem;}
+.progress {height: 12px; border-radius: 6px;}
+.highlight {font-weight:bold;}
 </style>
 </head>
 <body>
+<h1>ET/IDA Strengths Quiz</h1>
 
-<div class="container">
-  <h1>Workplace Strengths Quiz</h1>
-  <div id="quiz">
-    <div id="progress"><div id="progress-bar"></div></div>
-    <div id="question-container">
-      <div class="question" id="question"></div>
-      <ul class="options" id="options"></ul>
-    </div>
-    <button id="nextBtn" onclick="nextQuestion()">Next</button>
-  </div>
+<div id="quiz"></div>
 
-  <div class="results" id="results">
-    <h2>Your Results</h2>
-    <div id="finalProfile"></div>
-    <h3>Category Percentages</h3>
-    <div id="percentages"></div>
-    <button id="downloadBtn" onclick="downloadPDF()">Download Report</button>
-  </div>
-</div>
+<div id="report" class="hidden"></div>
+<button id="downloadBtn" class="hidden" onclick="downloadPDF()">Download My Report</button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// ---------------- Questions (~36 for 20 minutes)
+// ===== Data =====
 const questions = [
-  // Themes (9)
-  {q:"When planning a project, what’s your first step?", a:[
-    {text:"Analyze risks and opportunities","value":{"theme":"Strategic Thinking"}},
-    {text:"Organize tasks and assign roles","value":{"theme":"Execution"}},
-    {text:"Check team morale","value":{"theme":"Relationship Building"}},
-    {text:"Rally enthusiasm and buy-in","value":{"theme":"Influence"}}
-  ]},
-  {q:"During meetings, you often:", a:[
-    {text:"Spot patterns and propose strategies","value":{"theme":"Strategic Thinking"}},
-    {text:"Keep everyone on track","value":{"theme":"Execution"}},
-    {text:"Encourage everyone to speak","value":{"theme":"Relationship Building"}},
-    {text:"Inspire action with persuasion","value":{"theme":"Influence"}}
-  ]},
-  {q:"When a problem arises, you:", a:[
-    {text:"Think about long-term impacts","value":{"theme":"Strategic Thinking"}},
-    {text:"Take immediate action","value":{"theme":"Execution"}},
-    {text:"Consider how it affects others","value":{"theme":"Relationship Building"}},
-    {text:"Motivate people to respond positively","value":{"theme":"Influence"}}
-  ]},
-  {q:"Your approach to challenges is to:", a:[
-    {text:"Plan and analyze options","value":{"theme":"Strategic Thinking"}},
-    {text:"Act decisively","value":{"theme":"Execution"}},
-    {text:"Support the team emotionally","value":{"theme":"Relationship Building"}},
-    {text:"Encourage collaboration and buy-in","value":{"theme":"Influence"}}
-  ]},
-  {q:"You measure success by:", a:[
-    {text:"Clarity of strategy","value":{"theme":"Strategic Thinking"}},
-    {text:"Completion of tasks","value":{"theme":"Execution"}},
-    {text:"Team satisfaction and cohesion","value":{"theme":"Relationship Building"}},
-    {text:"Ability to inspire and lead","value":{"theme":"Influence"}}
-  ]},
-  {q:"When making decisions, you:", a:[
-    {text:"Weigh long-term consequences","value":{"theme":"Strategic Thinking"}},
-    {text:"Ensure tasks get done","value":{"theme":"Execution"}},
-    {text:"Consider team impact","value":{"theme":"Relationship Building"}},
-    {text:"Communicate vision effectively","value":{"theme":"Influence"}}
-  ]},
-  {q:"You prefer to work:", a:[
-    {text:"On strategic planning","value":{"theme":"Strategic Thinking"}},
-    {text:"On completing actionable tasks","value":{"theme":"Execution"}},
-    {text:"On supporting team members","value":{"theme":"Relationship Building"}},
-    {text:"On motivating others","value":{"theme":"Influence"}}
-  ]},
-  {q:"In conflicts, you tend to:", a:[
-    {text:"Look for long-term solutions","value":{"theme":"Strategic Thinking"}},
-    {text:"Take control to resolve quickly","value":{"theme":"Execution"}},
-    {text:"Mediate and support relationships","value":{"theme":"Relationship Building"}},
-    {text:"Persuade to reach agreement","value":{"theme":"Influence"}}
-  ]},
-  {q:"Your biggest contribution is:", a:[
-    {text:"Analyzing and planning","value":{"theme":"Strategic Thinking"}},
-    {text:"Executing reliably","value":{"theme":"Execution"}},
-    {text:"Fostering collaboration","value":{"theme":"Relationship Building"}},
-    {text:"Inspiring action","value":{"theme":"Influence"}}
-  ]},
-
-  // Workplace Styles (9)
-  {q:"What motivates you most at work?", a:[
-    {text:"Doing things correctly","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Achieving ambitious goals","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Exploring new possibilities","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Maintaining harmony","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"When facing a challenge, you:", a:[
-    {text:"Follow rules and best practices","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Push to succeed and meet goals","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Look for fun or creative approaches","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Keep the peace and avoid conflict","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"You feel most satisfied when:", a:[
-    {text:"Work meets high standards","value":{"workplaceStyle":"The Reformer"}},
-    {text:"You accomplish something significant","value":{"workplaceStyle":"The Achiever"}},
-    {text:"You discover something new","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Team members are happy and aligned","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"How do you handle stress?", a:[
-    {text:"Stick to rules and structure","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Focus on outcomes and results","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Stay positive and keep options open","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Maintain calm and harmony","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"Your decision-making style is:", a:[
-    {text:"Principled and methodical","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Goal-driven and fast","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Flexible and spontaneous","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Considerate and diplomatic","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"In meetings, you tend to:", a:[
-    {text:"Ensure rules are followed","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Focus on results and action","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Keep energy and positivity high","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Keep the discussion calm and fair","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"When learning something new, you:", a:[
-    {text:"Follow structured steps","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Practice until you master it","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Experiment and explore","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Observe and adapt gently","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"Your leadership style is:", a:[
-    {text:"Rule-oriented","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Goal-driven","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Energetic and inspiring","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Supportive and harmonious","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-  {q:"Success feels like:", a:[
-    {text:"Upholding principles","value":{"workplaceStyle":"The Reformer"}},
-    {text:"Achieving objectives","value":{"workplaceStyle":"The Achiever"}},
-    {text:"Experiencing excitement and discovery","value":{"workplaceStyle":"The Enthusiast"}},
-    {text:"Maintaining peace and agreement","value":{"workplaceStyle":"The Peacemaker"}}
-  ]},
-
-  // Signature Strengths (9)
-  {q:"When mentoring someone, you:", a:[
-    {text:"Guide them to grow","value":{"signatureStrength":"Coach"}},
-    {text:"Encourage them to stay positive","value":{"signatureStrength":"Optimist"}},
-    {text:"Help them solve problems","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Ensure they meet their deliverables","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"Your approach to challenges is:", a:[
-    {text:"Support and advise others","value":{"signatureStrength":"Coach"}},
-    {text:"Stay upbeat and look for opportunities","value":{"signatureStrength":"Optimist"}},
-    {text:"Analyze and solve the problem creatively","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Take responsibility to ensure results","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"You are most valued for:", a:[
-    {text:"Helping others succeed","value":{"signatureStrength":"Coach"}},
-    {text:"Maintaining a positive environment","value":{"signatureStrength":"Optimist"}},
-    {text:"Solving complex problems","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Reliability and consistency","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"You contribute most to a team by:", a:[
-    {text:"Mentoring and coaching","value":{"signatureStrength":"Coach"}},
-    {text:"Encouraging optimism","value":{"signatureStrength":"Optimist"}},
-    {text:"Solving obstacles creatively","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Delivering promised outcomes","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"Your key professional trait is:", a:[
-    {text:"Guidance and mentorship","value":{"signatureStrength":"Coach"}},
-    {text:"Positive perspective","value":{"signatureStrength":"Optimist"}},
-    {text:"Resourcefulness","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Dependability","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"When faced with ambiguity, you:", a:[
-    {text:"Provide advice and clarity","value":{"signatureStrength":"Coach"}},
-    {text:"Maintain positive outlook","value":{"signatureStrength":"Optimist"}},
-    {text:"Analyze and propose solutions","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Stick to deliverables and deadlines","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"Your ideal contribution to a project is:", a:[
-    {text:"Guide and mentor team members","value":{"signatureStrength":"Coach"}},
-    {text:"Inspire and maintain positivity","value":{"signatureStrength":"Optimist"}},
-    {text:"Solve complex problems","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Ensure completion and reliability","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"You are recognized for:", a:[
-    {text:"Coaching and support","value":{"signatureStrength":"Coach"}},
-    {text:"Optimism and morale","value":{"signatureStrength":"Optimist"}},
-    {text:"Problem-solving skills","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Dependable execution","value":{"signatureStrength":"Deliverer"}}
-  ]},
-  {q:"Teams rely on you for:", a:[
-    {text:"Guidance and growth","value":{"signatureStrength":"Coach"}},
-    {text:"Positive energy","value":{"signatureStrength":"Optimist"}},
-    {text:"Creative solutions","value":{"signatureStrength":"Problem-Solver"}},
-    {text:"Reliable results","value":{"signatureStrength":"Deliverer"}}
-  ]},
-
-  // Archetypes (9)
-  {q:"Your approach in teams is to:", a:[
-    {text:"Execute and follow through","value":{"archetype":"Operator"}},
-    {text:"Try new ideas and methods","value":{"archetype":"Explorer"}},
-    {text:"Connect people and strengthen relationships","value":{"archetype":"Connector"}},
-    {text:"Design systems for long-term success","value":{"archetype":"Architect"}}
-  ]},
-  {q:"You are most comfortable:", a:[
-    {text:"Taking action and getting things done","value":{"archetype":"Operator"}},
-    {text:"Exploring new approaches","value":{"archetype":"Explorer"}},
-    {text:"Networking and connecting","value":{"archetype":"Connector"}},
-    {text:"Planning and structuring systems","value":{"archetype":"Architect"}}
-  ]},
-  {q:"In projects, you:", a:[
-    {text:"Focus on execution","value":{"archetype":"Operator"}},
-    {text:"Experiment with creative ideas","value":{"archetype":"Explorer"}},
-    {text:"Foster collaboration","value":{"archetype":"Connector"}},
-    {text:"Develop strategic frameworks","value":{"archetype":"Architect"}}
-  ]},
-  {q:"You are recognized for:", a:[
-    {text:"Reliably getting things done","value":{"archetype":"Operator"}},
-    {text:"Innovation and exploration","value":{"archetype":"Explorer"}},
-    {text:"Relationship building","value":{"archetype":"Connector"}},
-    {text:"Systems thinking","value":{"archetype":"Architect"}}
-  ]},
-  {q:"Your preferred contribution is:", a:[
-    {text:"Operational excellence","value":{"archetype":"Operator"}},
-    {text:"Creative experimentation","value":{"archetype":"Explorer"}},
-    {text:"Connecting teams","value":{"archetype":"Connector"}},
-    {text:"Architecting processes","value":{"archetype":"Architect"}}
-  ]},
-  {q:"You are known for:", a:[
-    {text:"Executing with precision","value":{"archetype":"Operator"}},
-    {text:"Exploring opportunities","value":{"archetype":"Explorer"}},
-    {text:"Connecting teams","value":{"archetype":"Connector"}},
-    {text:"Strategic design","value":{"archetype":"Architect"}}
-  ]},
-  {q:"In decision-making, you:", a:[
-    {text:"Focus on practical outcomes","value":{"archetype":"Operator"}},
-    {text:"Consider new possibilities","value":{"archetype":"Explorer"}},
-    {text:"Consult and connect with people","value":{"archetype":"Connector"}},
-    {text:"Plan long-term systems","value":{"archetype":"Architect"}}
-  ]},
-  {q:"Teams value you for:", a:[
-    {text:"Execution and reliability","value":{"archetype":"Operator"}},
-    {text:"Innovation and creativity","value":{"archetype":"Explorer"}},
-    {text:"Connection and collaboration","value":{"archetype":"Connector"}},
-    {text:"Strategic planning and structure","value":{"archetype":"Architect"}}
-  ]},
-  {q:"Your signature approach is:", a:[
-    {text:"Getting things done efficiently","value":{"archetype":"Operator"}},
-    {text:"Trying new possibilities","value":{"archetype":"Explorer"}},
-    {text:"Building strong networks","value":{"archetype":"Connector"}},
-    {text:"Designing processes and frameworks","value":{"archetype":"Architect"}}
-  ]}
+  {q:"When approaching a complex problem, you most often:", a:["Strategic Thinking","Execution","Relationship Building","Influence"]},
+  {q:"Your team depends on you most for:", a:["Achiever","Collaborator","Innovator","Organizer"]},
+  {q:"In uncertain situations, you typically:", a:["Problem-Solver","Optimist","Networker","Organizer"]},
+  {q:"Your colleagues would describe your professional archetype as:", a:["Architect","Connector","Navigator","Guardian"]},
+  {q:"When facing multiple priorities, you:", a:["Strategic Thinking","Achiever","Relationship Building","Influence"]},
+  {q:"You contribute most to team discussions by:", a:["Analytical Thinking","Collaborating","Proposing new ideas","Clarifying processes"]},
+  {q:"You notice a potential threat others might miss because:", a:["Strategic Thinking","Execution","Networking","Ethics"]},
+  {q:"You prefer to solve problems by:", a:["Problem-Solving","Relationship Building","Planning","Creative Design"]},
+  {q:"You feel most valued when:", a:["Delivering results","Helping others succeed","Bringing new ideas","Keeping order"]},
+  {q:"In fast-changing environments, you:", a:["Adapt quickly","Rely on structure","Engage others","Ensure ethics"]},
+  {q:"You motivate your team by:", a:["Setting vision","Supporting effort","Connecting people","Creating solutions"]},
+  {q:"Your strongest skill in collaboration is:", a:["Strategic insight","Reliability","Empathy","Ethical guidance"]},
+  {q:"When documenting processes, you:", a:["Create systems","Encourage feedback","Design tools","Ensure alignment"]},
+  {q:"You excel at:", a:["Seeing trends","Executing tasks","Building relationships","Communicating ideas"]},
+  {q:"Your team appreciates you for:", a:["Clarity of vision","Consistency","Connection","Integrity"]},
+  {q:"You prioritize tasks based on:", a:["Strategic impact","Deadlines","Collaboration","Rules/standards"]},
+  {q:"You handle conflict by:", a:["Analyzing objectively","Mediating","Connecting","Upholding fairness"]},
+  {q:"You influence others by:", a:["Insightful advice","Demonstrating reliability","Fostering trust","Clear communication"]}
 ];
 
-let currentQ = 0;
-let scores = {theme:{}, workplaceStyle:{}, signatureStrength:{}, archetype:{}};
+const categories = {
+  "theme":["Strategic Thinking","Execution","Relationship Building","Influence"],
+  "style":["Achiever","Collaborator","Innovator","Organizer","Communicator"],
+  "strength":["Problem-Solver","Optimist","Networker","Organizer","Creative Designer","Reliable Executor"],
+  "archetype":["Architect","Connector","Navigator","Guardian","Catalyst"]
+};
 
-function showQuestion(){
-  const q = questions[currentQ];
-  document.getElementById("question").innerText = q.q;
-  const optionsEl = document.getElementById("options");
-  optionsEl.innerHTML = "";
-  q.a.forEach((opt)=>{
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.innerText = opt.text;
-    btn.onclick = ()=>{ selectOption(opt.value); };
-    li.appendChild(btn);
-    optionsEl.appendChild(li);
+const descriptions = {
+  theme:{
+    "Strategic Thinking":"You bring foresight, scanning for patterns and anticipating threats before they materialize. Your insight ensures ET/IDA stays ahead of emerging risks.",
+    "Execution":"You ensure reliability and follow-through, building structured processes that give ET/IDA credibility.",
+    "Relationship Building":"You embody empathy, humility, and kindness, strengthening ET/IDA’s partnerships and internal cohesion.",
+    "Influence":"You communicate clearly and positively, ensuring ET/IDA’s work gains traction and buy-in."
+  },
+  style:{
+    "Achiever":"You provide momentum and reliability, ensuring ET/IDA delivers on commitments.",
+    "Collaborator":"You strengthen trust and manage conflict constructively, modeling ET/IDA’s core values.",
+    "Innovator":"You generate new ideas and tools, advancing ET/IDA’s analytical capabilities.",
+    "Organizer":"You create structures and workflows that make ET/IDA’s work repeatable and efficient.",
+    "Communicator":"You ensure clarity and alignment in messaging both internally and externally."
+  },
+  strength:{
+    "Problem-Solver":"You adapt under uncertainty, finding practical solutions that drive progress.",
+    "Optimist":"You bring positivity and resilience, boosting team morale during challenging assessments.",
+    "Networker":"You expand ET/IDA’s reach by building trusted interagency and external relationships.",
+    "Creative Designer":"You make insights visual and actionable.",
+    "Reliable Executor":"You deliver consistent follow-through.",
+    "Organizer":"You create tools and frameworks to prioritize threats and organize workflows."
+  },
+  archetype:{
+    "Architect":"You build systems and processes that make ET/IDA’s work rigorous and repeatable.",
+    "Connector":"You bridge communities, ensuring ET/IDA is a trusted partner.",
+    "Navigator":"You chart pathways through uncertainty, balancing priorities with realities.",
+    "Guardian":"You safeguard integrity, ethics, and reliability within the team.",
+    "Catalyst":"You energize and mobilize the team to act on insights."
+  }
+};
+
+// ===== Build Quiz =====
+const quizDiv = document.getElementById("quiz");
+questions.forEach((q,i)=>{
+  const div = document.createElement("div");
+  div.className="question";
+  let html=`<p><b>${i+1}. ${q.q}</b></p>`;
+  q.a.forEach(a=>{
+    html+=`<label><input type="radio" name="q${i}" value="${a}"> ${a}</label>`;
   });
-  document.getElementById("progress-bar").style.width = ((currentQ)/questions.length*100) + "%";
-}
+  div.innerHTML=html;
+  quizDiv.appendChild(div);
+});
+const btn=document.createElement("button");
+btn.textContent="Finish Quiz";
+btn.onclick=finishQuiz;
+quizDiv.appendChild(btn);
 
-function selectOption(value){
-  for(const key in value){
-    scores[key][value[key]] = (scores[key][value[key]] || 0)+1;
+let userResult={};
+
+// ===== Calculate Results =====
+function finishQuiz(){
+  let answers={};
+  for(let i=0;i<questions.length;i++){
+    const val=document.querySelector(`input[name="q${i}"]:checked`)?.value;
+    if(!val){ alert("Please answer all questions."); return; }
+    answers[val]=(answers[val]||0)+1;
   }
-  nextQuestion();
-}
-
-function nextQuestion(){
-  currentQ++;
-  if(currentQ<questions.length){
-    showQuestion();
-  } else {
-    showResults();
-  }
-}
-
-function showResults(){
-  document.getElementById("quiz").style.display="none";
-  document.getElementById("results").style.display="block";
-
-  const topTheme = Object.keys(scores.theme).reduce((a,b)=> scores.theme[a]>scores.theme[b]?a:b);
-  const topStyle = Object.keys(scores.workplaceStyle).reduce((a,b)=> scores.workplaceStyle[a]>scores.workplaceStyle[b]?a:b);
-  const topStrength = Object.keys(scores.signatureStrength).reduce((a,b)=> scores.signatureStrength[a]>scores.signatureStrength[b]?a:b);
-  const topArchetype = Object.keys(scores.archetype).reduce((a,b)=> scores.archetype[a]>scores.archetype[b]?a:b);
-
-  const profileText = generateProfile(topTheme, topStyle, topStrength, topArchetype);
-  document.getElementById("finalProfile").innerText = profileText;
-
-  const categories = {...scores.theme,...scores.workplaceStyle,...scores.signatureStrength,...scores.archetype};
-  const total = Object.values(categories).reduce((a,b)=>a+b,0);
-  const percentEl = document.getElementById("percentages");
-  percentEl.innerHTML="";
-  const colors = {theme:"#4f46e5", workplaceStyle:"#10b981", signatureStrength:"#8b5cf6", archetype:"#f97316"};
-  for(const cat in categories){
-    const pct = Math.round(categories[cat]/total*100);
-    const barContainer = document.createElement("div");
-    barContainer.className="bar-container";
-    const bar = document.createElement("div");
-    bar.className="bar";
-    bar.style.width=pct+"%";
-    if(scores.theme[cat]) bar.style.background=colors.theme;
-    else if(scores.workplaceStyle[cat]) bar.style.background=colors.workplaceStyle;
-    else if(scores.signatureStrength[cat]) bar.style.background=colors.signatureStrength;
-    else if(scores.archetype[cat]) bar.style.background=colors.archetype;
-    bar.innerText = pct+"% "+cat;
-    barContainer.appendChild(bar);
-    percentEl.appendChild(barContainer);
-  }
-}
-
-function generateProfile(theme, style, strength, archetype){
-  const descriptions = {
-    "Strategic Thinking":"You analyze complex situations and anticipate opportunities.",
-    "Execution":"You turn plans into action and ensure projects are completed efficiently.",
-    "Relationship Building":"You create trust and foster collaboration within teams.",
-    "Influence":"You inspire and motivate others to align on goals.",
-    "The Reformer":"You are principled and ensure standards are maintained.",
-    "The Achiever":"You set high goals and focus on achieving results.",
-    "The Enthusiast":"You bring energy and positivity, encouraging innovation.",
-    "The Peacemaker":"You maintain harmony and resolve conflicts effectively.",
-    "Coach":"You help others grow and strengthen team morale.",
-    "Optimist":"You maintain a positive outlook, uplifting those around you.",
-    "Problem-Solver":"You creatively navigate challenges and find solutions.",
-    "Deliverer":"You are dependable, ensuring commitments are met.",
-    "Operator":"You implement plans efficiently and maintain progress.",
-    "Explorer":"You explore new ideas and encourage innovation.",
-    "Connector":"You build relationships and strengthen team cohesion.",
-    "Architect":"You plan systems and strategies for long-term success."
-  };
-  return `You combine ${theme}, ${style}, ${strength}, and ${archetype} in your work. 
-${descriptions[theme]} ${descriptions[style]} ${descriptions[strength]} ${descriptions[archetype]} 
-Your combined strengths make you a reliable, innovative, and motivating presence in any team.`;
-}
-
-function downloadPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.text("Workplace Strengths Report", 105, 20, null, null, "center");
-  doc.setLineWidth(0.5);
-  doc.line(20, 25, 190, 25); // line under title
-
-  const categories = {...scores.theme,...scores.workplaceStyle,...scores.signatureStrength,...scores.archetype};
-  const total = Object.values(categories).reduce((a,b)=>a+b,0);
-  const colors = {theme:"#4f46e5", workplaceStyle:"#10b981", signatureStrength:"#8b5cf6", archetype:"#f97316"};
-  let y = 35;
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text("Category Percentages", 20, y);
-  y += 8;
-
-  for(const cat in categories){
-    const pct = Math.round(categories[cat]/total*100);
-    let color = "#999999";
-    if(scores.theme[cat]) color = colors.theme;
-    else if(scores.workplaceStyle[cat]) color = colors.workplaceStyle;
-    else if(scores.signatureStrength[cat]) color = colors.signatureStrength;
-    else if(scores.archetype[cat]) color = colors.archetype;
-    doc.setFillColor(color);
-    doc.rect(25, y, pct*1.5, 8, "F");
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0,0,0);
-    doc.text(`${cat} - ${pct}%`, 130, y+7);
-    y += 14;
+  
+  userResult={};
+  for(let cat in categories){
+    let topVal="",topCount=-1;
+    categories[cat].forEach(item=>{
+      if((answers[item]||0)>topCount){topCount=answers[item]; topVal=item;}
+    });
+    userResult[cat]=topVal;
+    userResult[cat+"_percent"] = Math.round(((answers[topVal]||0)/questions.length)*100);
   }
 
-  y += 5;
-  doc.setFont("helvetica", "bold");
-  doc.text("Integrated Profile", 20, y);
-  y += 7;
-
-  const profile = document.getElementById("finalProfile").innerText;
-  doc.setFont("helvetica", "normal");
-  const splitText = doc.splitTextToSize(profile, 170);
-  doc.text(splitText, 20, y);
-  doc.save("Workplace_Strengths_Report.pdf");
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("report").classList.remove("hidden");
+  document.getElementById("report").innerHTML=buildVisualReport(userResult);
+  document.getElementById("downloadBtn").classList.remove("hidden");
 }
 
-showQuestion();
-</script>
-</body>
-</html>
+// ===== Build Visual Report =====
+function buildVisualReport(res){
+  function sectionHTML(cat, colorClass, emoji){
+    return `
+      <div class="report-section ${colorClass}">
+        <h2>${emoji} ${cat.charAt(0).toUpperCase()+cat.slice(1)}: ${res[cat]} (${res[cat+"_percent"]}%)</h2>
+        <div class="progress-bar"><div class="progress" style="width:${res[cat+"_percent"]}%;background:#fff;"></div></div>
+        <p>${descriptions[cat][res[cat]]}</p>
+      </div>
+    `;
+  }
+  return sectionHTML("theme","theme","🧠")+
+         sectionHTML("style","style","🏃")+
+         sectionHTML("strength","strength","💪")+
+         sectionHTML("archetype","archetype","🛡️")+
+         `<div class="report-section value-add">
+            <h2>🌟 Value Add</h2>
+            <p>Together, your top results demonstrate how you contribute to ET/IDA’s mission. Combining 
+            <span class="highlight">${res.theme}</span> (${res.theme_percent}%), 
+            <span class="highlight">${res.style}</span> (${res.style_percent}%), 
+            <span class="highlight">${res.strength}</
